@@ -1,0 +1,17 @@
+export const COLLECTIONS = {
+  COMPANIES: 'companies',
+  USERS: 'users',
+  COMPANY_MEMBERS: 'company_members',
+  SUPPLIERS: 'suppliers',
+  CANONICAL_PRODUCTS: 'canonical_products',
+  PRODUCT_ALIASES: 'product_aliases',
+  SUPPLIER_UPLOADS: 'supplier_uploads',
+  UPLOAD_ITEMS_RAW: 'upload_items_raw',
+  MATCH_REVIEWS: 'match_reviews',
+  REJECTED_MATCHES: 'rejected_matches',
+  PRICE_ENTRIES: 'price_entries',
+  AUDIT_LOGS: 'audit_logs',
+  MATCH_LEARNING: 'match_learning',
+  EXCHANGE_RATES: 'exchange_rates',
+  QUOTATION_ITEMS: 'quotation_items',
+} as const;

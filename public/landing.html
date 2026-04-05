@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="main-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Price Comparator | AI Procurement Intelligence</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;800&family=Instrument+Serif:ital@1&family=Cairo:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --background: 213 45% 8%;
+            --foreground: 0 0% 100%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: 'Barlow', 'Cairo', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .font-heading { font-family: 'Instrument Serif', 'Cairo', serif; font-style: italic; }
+        [lang="ar"] .font-heading { font-style: normal; font-weight: 900; }
+
+        /* --- PREMIUM LIQUID GLASS SYSTEM --- */
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .liquid-glass-strong {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px rgba(255,255,255,0.1);
+            position: relative;
+            border-radius: 32px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .liquid-glass::before, .liquid-glass-strong::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            padding: 1.2px;
+            border-radius: inherit;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent, rgba(255,255,255,0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .liquid-glass:hover, .liquid-glass-strong:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+        }
+
+        @keyframes blurIn {
+            from { filter: blur(20px); opacity: 0; transform: translateY(30px); }
+            to { filter: blur(0); opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-blur-in { animation: blurIn 0.8s ease-out forwards; }
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+
+        .word-stagger span {
+            display: inline-block;
+            opacity: 0;
+            filter: blur(10px);
+            transform: translateY(20px);
+            animation: blurIn 0.5s ease-out forwards;
+        }
+
+        .hero-overlay {
+            background: linear-gradient(to bottom, rgba(8, 15, 30, 0.6), hsl(var(--background)));
+        }
+
+        .dash-stat { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; }
+        .status-badge { padding: 2px 8px; border-radius: 99px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-2xl">
+                    <i data-lucide="bar-chart-3" class="text-black w-6 h-6"></i>
+                </div>
+                <span class="text-xl font-black tracking-tighter hidden sm:block">SmartPrice</span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-1 liquid-glass px-2 py-2 rounded-full">
+                <a href="#dashboard" class="px-5 py-2 text-[10px] font-bold uppercase tracking-widest hover:text-white/60 transition-colors" data-en="Dashboard" data-ar="لوحة التحكم">لوحة التحكم</a>
+                <a href="#workflow" class="px-5 py-2 text-[10px] font-bold uppercase tracking-widest hover:text-white/60 transition-colors" data-en="Workflow" data-ar="آلية العمل">آلية العمل</a>
+                <a href="#pages" class="px-5 py-2 text-[10px] font-bold uppercase tracking-widest hover:text-white/60 transition-colors" data-en="Pages" data-ar="الأقسام">الأقسام</a>
+                <div class="h-4 w-[1px] bg-white/10 mx-2"></div>
+                <a href="/app" class="bg-white text-black px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/90 transition-all">
+                    <span data-en="Go to Platform" data-ar="ابدأ الآن">ابدأ الآن</span>
+                    <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                </a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="toggleLanguage()" class="liquid-glass px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] rounded-full" id="lang-btn">EN</button>
+                <a href="/login" class="text-xs font-bold uppercase tracking-widest" data-en="Login" data-ar="دخول">دخول</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center pt-20">
+        <div class="absolute inset-0 -z-20">
+            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2000" class="w-full h-full object-cover opacity-40" alt="Space Background">
+            <div class="absolute inset-0 hero-overlay"></div>
+        </div>
+
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center gap-2 liquid-glass px-4 py-2 mb-10 animate-blur-in rounded-full">
+                <span class="bg-white text-black px-2 py-0.5 rounded-full text-[10px] font-black uppercase">AI</span>
+                <span class="text-[10px] font-bold uppercase tracking-[0.2em]" data-en="Smart Quotation Management Platform" data-ar="منصة إدارة عروض الأسعار الذكية">منصة إدارة عروض الأسعار الذكية</span>
+            </div>
+
+            <h1 class="font-heading text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-[-0.04em] mb-10 word-stagger" id="hero-title">
+                <span>تجاوز</span> <span>حدود</span> <span>التسعير</span> <span>التقليدي</span>
+            </h1>
+
+            <p class="text-lg md:text-xl font-light max-w-2xl mx-auto mb-12 opacity-0 animate-blur-in delay-1" data-en="Analyze supplier quotations with AI precision and make faster purchasing decisions." data-ar="حلل عروض أسعار الموردين بدقة الذكاء الاصطناعي واتخذ قرارات شراء أسرع.">
+                حلل عروض أسعار الموردين بدقة الذكاء الاصطناعي واتخذ قرارات شراء أسرع.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 opacity-0 animate-blur-in delay-2">
+                <a href="/app" class="liquid-glass-strong px-10 py-5 text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:scale-105 transition-transform rounded-full">
+                    <span data-en="Start Your Voyage" data-ar="ابدأ رحلتك الآن">ابدأ رحلتك الآن</span>
+                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="liquid-glass-strong p-12 text-center group">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8 mx-auto">
+                        <i data-lucide="zap" class="text-white w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-black uppercase tracking-tight mb-4" data-en="Instant Extraction" data-ar="استخراج فوري">استخراج فوري</h3>
+                    <p class="text-white/50 font-light leading-relaxed text-sm" data-en="AI scans PDFs and Excels in seconds, pulling every line item." data-ar="يقوم الذكاء الاصطناعي بمسح ملفات PDF و Excel في ثوانٍ.">يقوم الذكاء الاصطناعي بمسح ملفات PDF و Excel في ثوانٍ.</p>
+                </div>
+                <div class="liquid-glass-strong p-12 text-center group">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8 mx-auto">
+                        <i data-lucide="globe" class="text-white w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-black uppercase tracking-tight mb-4" data-en="Global Currency" data-ar="عملات عالمية">عملات عالمية</h3>
+                    <p class="text-white/50 font-light leading-relaxed text-sm" data-en="Normalize prices from any currency to your base rate." data-ar="قم بتوحيد الأسعار من أي عملة إلى سعرك الأساسي تلقائياً.">قم بتوحيد الأسعار من أي عملة إلى سعرك الأساسي تلقائياً.</p>
+                </div>
+                <div class="liquid-glass-strong p-12 text-center group">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8 mx-auto">
+                        <i data-lucide="shield-check" class="text-white w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-black uppercase tracking-tight mb-4" data-en="Enterprise Grade" data-ar="أمان المؤسسات">أمان المؤسسات</h3>
+                    <p class="text-white/50 font-light leading-relaxed text-sm" data-en="Your data is protected by the highest standards of encryption." data-ar="بياناتك محمية بأعلى معايير التشفير والخصوصية العالمية.">بياناتك محمية بأعلى معايير التشفير والخصوصية العالمية.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <div class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-4">DASHBOARD</div>
+                <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tight" data-en="From quotation uploads to purchasing decisions" data-ar="من رفع عروض الأسعار إلى قرارات الشراء">من رفع عروض الأسعار إلى قرارات الشراء</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="liquid-glass-strong p-8">
+                    <div class="flex gap-2 mb-8">
+                        <div class="w-3 h-3 rounded-full bg-red-500/30"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/30"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/30"></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <div class="dash-stat">
+                            <div class="text-[9px] font-bold text-white/40 uppercase mb-1">Products</div>
+                            <div class="text-lg font-black">12,480</div>
+                        </div>
+                        <div class="dash-stat">
+                            <div class="text-[9px] font-bold text-white/40 uppercase mb-1">Suppliers</div>
+                            <div class="text-lg font-black">128</div>
+                        </div>
+                        <div class="dash-stat">
+                            <div class="text-[9px] font-bold text-white/40 uppercase mb-1">Waiting</div>
+                            <div class="text-lg font-black">24</div>
+                        </div>
+                    </div>
+                    <div class="liquid-glass rounded-xl overflow-hidden text-[10px]">
+                        <table class="w-full text-left">
+                            <thead class="bg-white/5 text-[8px] uppercase font-black text-white/30">
+                                <tr><th class="p-4">Quotation</th><th class="p-4">Supplier</th><th class="p-4">Status</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                <tr><td class="p-4 font-bold">Spring Tech Batch</td><td class="p-4 text-white/60">AM Sony</td><td class="p-4"><span class="status-badge bg-orange-500/20 text-orange-400">In Review</span></td></tr>
+                                <tr><td class="p-4 font-bold">Camera Promo List</td><td class="p-4 text-white/60">Keystone</td><td class="p-4"><span class="status-badge bg-green-500/20 text-green-400">Finalized</span></td></tr>
+                                <tr><td class="p-4 font-bold">Audio Accessories</td><td class="p-4 text-white/60">Trust Lexar</td><td class="p-4"><span class="status-badge bg-blue-500/20 text-blue-400">Uploaded</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-black mb-6 leading-tight" data-en="See what needs attention before it becomes delay" data-ar="شاهد ما يحتاج إلى اهتمام قبل أن يتأخر">شاهد ما يحتاج إلى اهتمام قبل أن يتأخر</h3>
+                    <p class="text-white/50 mb-10 font-light leading-relaxed" data-en="Track pending reviews and pricing movement without switching between scattered files." data-ar="تتبع المراجعات المعلقة وحركة الأسعار دون التنقل بين الملفات المشتتة.">تتبع المراجعات المعلقة وحركة الأسعار دون التنقل بين الملفات المشتتة.</p>
+                    <a href="/app" class="liquid-glass px-8 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all inline-block">Go to Platform</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workflow Section -->
+    <section id="workflow" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-24 items-center">
+                <div>
+                    <h2 class="text-5xl font-black mb-12 tracking-tighter leading-none" data-en="HOW IT <br><span class='text-blue-400'>WORKS</span>" data-ar="آلية <br><span class='text-blue-400'>العمل</span>">آلية <br><span class="text-blue-400">العمل</span></h2>
+                    <div class="space-y-10">
+                        <div class="flex gap-8 group">
+                            <div class="text-4xl font-black text-white/10 group-hover:text-white/30 transition-colors">01</div>
+                            <div>
+                                <h3 class="text-lg font-black mb-2 uppercase tracking-tight" data-en="Upload Quotation" data-ar="رفع عروض الأسعار">رفع عروض الأسعار</h3>
+                                <p class="text-white/40 text-sm font-light" data-en="Drag and drop your supplier files. AI starts processing instantly." data-ar="قم بسحب وإفلات ملفات الموردين. يبدأ الذكاء الاصطناعي في المعالجة فوراً.">قم بسحب وإفلات ملفات الموردين. يبدأ الذكاء الاصطناعي في المعالجة فوراً.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-8 group">
+                            <div class="text-4xl font-black text-white/10 group-hover:text-white/30 transition-colors">02</div>
+                            <div>
+                                <h3 class="text-lg font-black mb-2 uppercase tracking-tight" data-en="AI Review" data-ar="مراجعة الذكاء الاصطناعي">مراجعة الذكاء الاصطناعي</h3>
+                                <p class="text-white/40 text-sm font-light" data-en="Review the extracted data and AI-powered product matching." data-ar="راجع البيانات المستخرجة ومطابقة المنتجات المدعومة بالذكاء الاصطناعي.">راجع البيانات المستخرجة ومطابقة المنتجات المدعومة بالذكاء الاصطناعي.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-8 group">
+                            <div class="text-4xl font-black text-white/10 group-hover:text-white/30 transition-colors">03</div>
+                            <div>
+                                <h3 class="text-lg font-black mb-2 uppercase tracking-tight" data-en="Compare & Save" data-ar="قارن ووفر">قارن ووفر</h3>
+                                <p class="text-white/40 text-sm font-light" data-en="Compare historical data and finalize the best purchase decision." data-ar="قارن البيانات التاريخية واتخذ أفضل قرار شراء نهائي.">قارن البيانات التاريخية واتخذ أفضل قرار شراء نهائي.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="liquid-glass-strong p-12">
+                    <h4 class="text-xl font-black mb-10 uppercase tracking-widest" data-en="EFFICIENCY BOOST" data-ar="زيادة الكفاءة">زيادة الكفاءة</h4>
+                    <div class="space-y-10">
+                        <div>
+                            <div class="flex justify-between text-[9px] font-black mb-3 uppercase tracking-widest text-white/40">
+                                <span data-en="MANUAL ENTRY" data-ar="إدخال يدوي">إدخال يدوي</span>
+                                <span>45 MINS</span>
+                            </div>
+                            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-white/20 w-full"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[9px] font-black mb-3 uppercase tracking-widest text-white/40">
+                                <span data-en="SMARTPRICE AI" data-ar="ذكاء سمارت برايس">ذكاء سمارت برايس</span>
+                                <span>2 MINS</span>
+                            </div>
+                            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-orange-500 w-[10%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-12 text-white/30 text-xs font-medium leading-relaxed" data-en="Save up to 95% of your time on quotation data entry." data-ar="وفر ما يصل إلى 95% من وقتك في إدخال بيانات عروض الأسعار.">وفر ما يصل إلى 95% من وقتك في إدخال بيانات عروض الأسعار.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Pages Section -->
+    <section id="pages" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <div class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-4">MAIN PAGES</div>
+                <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tight" data-en="Everything your team needs" data-ar="كل ما يحتاجه فريقك">كل ما يحتاجه فريقك</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Dashboard" data-ar="لوحة التحكم">لوحة التحكم</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="Shows key business metrics, latest uploads, and visual price insights." data-ar="تعرض مقاييس العمل الرئيسية، أحدث التحميلات، ورؤى الأسعار البصرية.">تعرض مقاييس العمل الرئيسية، أحدث التحميلات، ورؤى الأسعار البصرية.</p>
+                </div>
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Suppliers" data-ar="الموردين">الموردين</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="Manage all suppliers in one place, including currencies and contact details." data-ar="إدارة جميع الموردين في مكان واحد، بما في ذلك العملات وتفاصيل الاتصال.">إدارة جميع الموردين في مكان واحد، بما في ذلك العملات وتفاصيل الاتصال.</p>
+                </div>
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Canonical Catalog" data-ar="الكتالوج الموحد">الكتالوج الموحد</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="The unified master catalog for your products and historical price records." data-ar="الكتالوج الرئيسي الموحد لمنتجاتك وسجلات الأسعار التاريخية.">الكتالوج الرئيسي الموحد لمنتجاتك وسجلات الأسعار التاريخية.</p>
+                </div>
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Upload" data-ar="رفع الملفات">رفع الملفات</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="Upload supplier quotations using drag-and-drop for automatic extraction." data-ar="رفع عروض أسعار الموردين باستخدام السحب والإفلات للاستخراج التلقائي.">رفع عروض أسعار الموردين باستخدام السحب والإفلات للاستخراج التلقائي.</p>
+                </div>
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Review Page" data-ar="صفحة المراجعة">صفحة المراجعة</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="Review extracted items, approve AI suggestions, or create new entries." data-ar="مراجعة العناصر المستخرجة، الموافقة على اقتراحات الذكاء الاصطناعي، أو إنشاء مدخلات جديدة.">مراجعة العناصر المستخرجة، الموافقة على اقتراحات الذكاء الاصطناعي، أو إنشاء مدخلات جديدة.</p>
+                </div>
+                <div class="liquid-glass-strong p-10 text-center">
+                    <h3 class="text-lg font-black mb-4 uppercase tracking-tight" data-en="Exchange Rates" data-ar="أسعار الصرف">أسعار الصرف</h3>
+                    <p class="text-white/40 text-xs leading-relaxed font-light" data-en="Maintain currency conversion rates for normalized price comparisons." data-ar="الحفاظ على أسعار تحويل العملات لمقارنات أسعار موحدة.">الحفاظ على أسعار تحويل العملات لمقارنات أسعار موحدة.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trusted by Teams Section -->
+    <section class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <div class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-4">TRUSTED BY TEAMS</div>
+                <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tight" data-en="Built for speed and visibility" data-ar="مصمم للسرعة والوضوح">مصمم للسرعة والوضوح</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="liquid-glass-strong p-8 text-center flex flex-col justify-between h-full">
+                    <div>
+                        <div class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-6" data-en="Procurement" data-ar="المشتريات">المشتريات</div>
+                        <p class="text-xs font-bold leading-relaxed mb-8 italic text-white/80" data-en="We reduced quotation review time dramatically because the system prepares items." data-ar="لقد خفضنا وقت مراجعة عروض الأسعار بشكل كبير لأن النظام يجهز العناصر للمطابقة.">"لقد خفضنا وقت مراجعة عروض الأسعار بشكل كبير لأن النظام يجهز العناصر للمطابقة."</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-black text-white">A</div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase">Amir D.</div>
+                            <div class="text-[8px] font-bold text-white/20 uppercase" data-en="Verified User" data-ar="مستخدم موثق">مستخدم موثق</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="liquid-glass-strong p-8 text-center flex flex-col justify-between h-full">
+                    <div>
+                        <div class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-6" data-en="Operations" data-ar="العمليات">العمليات</div>
+                        <p class="text-xs font-bold leading-relaxed mb-8 italic text-white/80" data-en="The biggest improvement is visibility. We can instantly see which uploads are pending." data-ar="أكبر تحسن هو الوضوح. يمكننا أن نرى فوراً أي التحميلات معلقة.">"أكبر تحسن هو الوضوح. يمكننا أن نرى فوراً أي التحميلات معلقة."</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-black text-white">R</div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase">Rana M.</div>
+                            <div class="text-[8px] font-bold text-white/20 uppercase" data-en="Verified User" data-ar="مستخدم موثق">مستخدم موثق</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="liquid-glass-strong p-8 text-center flex flex-col justify-between h-full">
+                    <div>
+                        <div class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-6" data-en="Comparison" data-ar="المقارنة">المقارنة</div>
+                        <p class="text-xs font-bold leading-relaxed mb-8 italic text-white/80" data-en="Currency normalization and a unified catalog made comparisons far more reliable." data-ar="جعل توحيد العملات والكتالوج الموحد المقارنات أكثر موثوقية بكثير.">"جعل توحيد العملات والكتالوج الموحد المقارنات أكثر موثوقية بكثير."</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-black text-white">K</div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase">Khaled S.</div>
+                            <div class="text-[8px] font-bold text-white/20 uppercase" data-en="Verified User" data-ar="مستخدم موثق">مستخدم موثق</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="liquid-glass-strong p-8 text-center flex flex-col justify-between h-full">
+                    <div>
+                        <div class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-6" data-en="Commercial" data-ar="التجاري">التجاري</div>
+                        <p class="text-xs font-bold leading-relaxed mb-8 italic text-white/80" data-en="The review page gives us confidence because nothing is committed blindly." data-ar="تمنحنا صفحة المراجعة الثقة لأنه لا يتم اعتماد أي شيء بشكل أعمى.">"تمنحنا صفحة المراجعة الثقة لأنه لا يتم اعتماد أي شيء بشكل أعمى."</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center font-black text-white">L</div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase">Lina H.</div>
+                            <div class="text-[8px] font-bold text-white/20 uppercase" data-en="Verified User" data-ar="مستخدم موثق">مستخدم موثق</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="text-[10px] font-black uppercase tracking-[0.5em] text-white/30">
+                © 2026 Smart Price Comparator. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        let currentLang = 'ar';
+        const translations = {
+            en: { title: "Venture Past Manual Pricing", btn: "AR" },
+            ar: { title: "تجاوز حدود التسعير التقليدي", btn: "EN" }
+        };
+
+        function updateContent() {
+            const html = document.getElementById('main-html');
+            const heroTitle = document.getElementById('hero-title');
+            const langBtn = document.getElementById('lang-btn');
+
+            html.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            html.lang = currentLang;
+            langBtn.innerText = translations[currentLang].btn;
+
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute(`data-${currentLang}`);
+                if (text.includes('<')) {
+                    el.innerHTML = text;
+                } else {
+                    el.innerText = text;
+                }
+            });
+
+            const words = translations[currentLang].title.split(' ');
+            heroTitle.innerHTML = words.map((w, i) => `<span style="animation-delay: ${i * 0.1}s">${w}</span>`).join(' ');
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            updateContent();
+        }
+
+        // Initial call to set correct language content
+        updateContent();
+    </script>
+</body>
+</html>

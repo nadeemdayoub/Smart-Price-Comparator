@@ -1,0 +1,266 @@
+{
+  "entities": {
+    "system_stats": {
+      "title": "System Stats",
+      "description": "Global metrics for the super admin dashboard.",
+      "type": "object",
+      "properties": {
+        "totalUsers": { "type": "integer" },
+        "pendingUsers": { "type": "integer" },
+        "activeCompanies": { "type": "integer" },
+        "totalUploads": { "type": "integer" },
+        "totalSnapshots": { "type": "integer" },
+        "totalComparisons": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["totalUsers", "pendingUsers", "activeCompanies", "updatedAt"]
+    },
+    "company": {
+      "title": "Company",
+      "description": "A tenant in the SaaS system.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Legal name of the company." },
+        "ownerId": { "type": "string" },
+        "ownerEmail": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "memberLimit": { "type": "integer" },
+        "memberCount": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "blocked"] },
+        "defaultCurrency": { "type": "string", "description": "Base currency for reports (e.g., USD)." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["name", "ownerId", "memberLimit", "status", "createdBy"]
+    },
+    "user": {
+      "title": "User",
+      "description": "A user profile.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "blocked"] },
+        "accountType": { "type": "string", "enum": ["individual", "company"] },
+        "role": { "type": "string", "enum": ["super_admin", "company_owner", "company_user", "individual_user"] },
+        "companyId": { "type": "string" },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "totalUploads": { "type": "integer" },
+            "totalSnapshots": { "type": "integer" },
+            "totalComparisons": { "type": "integer" },
+            "timeSpent": { "type": "integer" },
+            "lastActivity": { "type": "string", "format": "date-time" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "status", "accountType", "role"]
+    },
+    "company_member": {
+      "title": "Company Member",
+      "description": "Mapping of user to company with role.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "user"] },
+        "status": { "type": "string", "enum": ["active", "removed"] },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "addedBy": { "type": "string" }
+      },
+      "required": ["userId", "companyId", "role", "status", "joinedAt", "addedBy"]
+    },
+    "supplier": {
+      "title": "Supplier",
+      "description": "A vendor providing quotations.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "name": { "type": "string" },
+        "defaultCurrency": { "type": "string" },
+        "contactInfo": { "type": "string" }
+      },
+      "required": ["companyId", "name", "defaultCurrency"]
+    },
+    "canonical_product": {
+      "title": "Canonical Product",
+      "description": "A canonical product in the master catalog.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "canonicalName": { "type": "string" },
+        "normalizedName": { "type": "string" },
+        "brand": { "type": "string" },
+        "category": { "type": "string" },
+        "internalReference": { "type": "string" },
+        "costPrice": { "type": "number" },
+        "stockQty": { "type": "number" },
+        "searchTokens": { "type": "array", "items": { "type": "string" } },
+        "sensitiveSignature": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyId", "canonicalName", "normalizedName", "searchTokens", "sensitiveSignature", "status"]
+    },
+    "product_alias": {
+      "title": "Product Alias",
+      "description": "A mapping from a supplier's raw name to a canonical product.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "productId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "supplierId": { "type": "string" }
+      },
+      "required": ["companyId", "productId", "rawName"]
+    },
+    "supplier_upload": {
+      "title": "Supplier Upload",
+      "description": "An uploaded quotation file.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "processing", "reviewing", "completed", "failed"] },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyId", "supplierId", "fileName", "status"]
+    },
+    "match_review": {
+      "title": "Match Review",
+      "description": "A row from an upload being reviewed for matching.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "uploadId": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "rawCode": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "matchedProductId": { "type": "string" },
+        "confidence": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "no_match", "low_confidence", "duplicate"] },
+        "matchType": { "type": "string", "enum": ["auto", "manual"] }
+      },
+      "required": ["companyId", "uploadId", "rawName", "price", "currency", "status"]
+    },
+    "price_entry": {
+      "title": "Price Entry",
+      "description": "A historical price record for a product from a supplier.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "productId": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "uploadId": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyId", "productId", "supplierId", "price", "currency", "date"]
+    },
+    "audit_log": {
+      "title": "Audit Log",
+      "description": "Tracking user actions.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "object" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyId", "userId", "action", "timestamp"]
+    },
+    "quotation_item": {
+      "title": "Quotation Item",
+      "description": "A legacy item from a quotation.",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string" },
+        "quotationId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] }
+      },
+      "required": ["ownerUserId", "quotationId", "rawName", "price", "currency", "status"]
+    },
+    "upload_item_raw": {
+      "title": "Upload Item Raw",
+      "description": "A raw item from a supplier upload.",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string" },
+        "uploadId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "rawPrice": { "type": "number" },
+        "rawCurrency": { "type": "string" }
+      },
+      "required": ["ownerUserId", "uploadId", "rawName", "rawPrice", "rawCurrency"]
+    },
+    "rejected_match": {
+      "title": "Rejected Match",
+      "description": "A record of a rejected match candidate.",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string" },
+        "normalizedRawName": { "type": "string" },
+        "candidateProductId": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "required": ["ownerUserId", "normalizedRawName", "candidateProductId", "reason"]
+    },
+    "exchange_rate": {
+      "title": "Exchange Rate",
+      "description": "Currency conversion rate.",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string" },
+        "fromCurrency": { "type": "string" },
+        "toCurrency": { "type": "string" },
+        "rate": { "type": "number" }
+      },
+      "required": ["ownerUserId", "fromCurrency", "toCurrency", "rate"]
+    },
+    "match_learning": {
+      "title": "Match Learning",
+      "description": "Learning signals for the matching engine.",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string" },
+        "productId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "normalizedRawName": { "type": "string" },
+        "action": { "type": "string", "enum": ["approved", "rejected"] }
+      },
+      "required": ["ownerUserId", "productId", "rawName", "normalizedRawName", "action"]
+    }
+  },
+  "firestore": {
+    "/system/stats": { "schema": "system_stats", "description": "Global system metrics." },
+    "/companies/{companyId}": { "schema": "company", "description": "Tenant data." },
+    "/users/{userId}": { "schema": "user", "description": "User profiles." },
+    "/company_members/{memberId}": { "schema": "company_member", "description": "Company membership." },
+    "/suppliers/{supplierId}": { "schema": "supplier", "description": "Supplier registry." },
+    "/canonical_products/{productId}": { "schema": "canonical_product", "description": "Canonical product catalog." },
+    "/product_aliases/{aliasId}": { "schema": "product_alias", "description": "Learned name mappings." },
+    "/supplier_uploads/{uploadId}": { "schema": "supplier_upload", "description": "Uploaded quotation batches." },
+    "/match_reviews/{reviewId}": { "schema": "match_review", "description": "Individual items for review." },
+    "/price_entries/{entryId}": { "schema": "price_entry", "description": "Historical price data." },
+    "/audit_logs/{logId}": { "schema": "audit_log", "description": "System activity logs." },
+    "/quotation_items/{itemId}": { "schema": "quotation_item", "description": "Legacy quotation items." },
+    "/upload_items_raw/{itemId}": { "schema": "upload_item_raw", "description": "Raw upload items." },
+    "/rejected_matches/{matchId}": { "schema": "rejected_match", "description": "Rejected matches." },
+    "/exchange_rates/{rateId}": { "schema": "exchange_rate", "description": "Currency rates." },
+    "/match_learning/{signalId}": { "schema": "match_learning", "description": "Learning signals." }
+  }
+}

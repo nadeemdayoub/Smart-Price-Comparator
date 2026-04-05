@@ -1,0 +1,333 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model (from firebase-blueprint.json)
+    // ===============================================================
+    //
+    // Collection: /users/{userId} -> Entity: user
+    // Collection: /companies/{companyId} -> Entity: company
+    // Collection: /company_members/{memberId} -> Entity: company_member
+    // Collection: /suppliers/{supplierId} -> Entity: supplier
+    // Collection: /canonical_products/{productId} -> Entity: canonical_product
+    // Collection: /product_aliases/{aliasId} -> Entity: product_alias
+    // Collection: /supplier_uploads/{uploadId} -> Entity: supplier_upload
+    // Collection: /match_reviews/{reviewId} -> Entity: match_review
+    // Collection: /price_entries/{entryId} -> Entity: price_entry
+    // Collection: /audit_logs/{logId} -> Entity: audit_log
+    // Collection: /system/stats -> Entity: system_stats
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isEmailAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "nadeemdayoub@gmail.com" || 
+         request.auth.token.email == "sales@qartaj.co") && 
+        request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      // Use email check first to avoid expensive get() calls and potential recursion
+      return isEmailAdmin() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && resource != null && request.auth.uid == resource.data.ownerUserId;
+    }
+
+    function hasRequiredFields(data, fields) {
+      return data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(data, fields) {
+      return data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(data, ['email', 'status', 'accountType', 'role']) &&
+        data.email is string && isValidEmail(data.email) && data.email.size() < 100 &&
+        data.status in ['pending', 'active', 'blocked'] &&
+        data.accountType in ['individual', 'company'] &&
+        data.role in ['super_admin', 'company_owner', 'company_user', 'individual_user'] &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+        (!('photoURL' in data) || (data.photoURL is string && isValidUrl(data.photoURL) && data.photoURL.size() < 500));
+    }
+
+    function isValidCompany(data) {
+      return hasRequiredFields(data, ['name', 'ownerId', 'memberLimit', 'status', 'createdBy']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+        data.ownerId is string &&
+        data.memberLimit is int && data.memberLimit > 0 &&
+        data.status in ['active', 'blocked'] &&
+        data.createdBy is string;
+    }
+
+    function isValidSupplier(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'name', 'defaultCurrency']) &&
+        data.ownerUserId is string &&
+        data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+        data.defaultCurrency is string && data.defaultCurrency.size() == 3;
+    }
+
+    function isValidCanonicalProduct(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'canonicalName', 'normalizedName', 'searchTokens', 'sensitiveSignature', 'status']) &&
+        data.ownerUserId is string &&
+        data.canonicalName is string && data.canonicalName.size() < 500 &&
+        data.normalizedName is string && data.normalizedName.size() < 500 &&
+        data.searchTokens is list && data.searchTokens.size() < 100 &&
+        data.status in ['active', 'archived'];
+    }
+
+    function isValidSupplierUpload(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'supplierId', 'fileName', 'status']) &&
+        data.ownerUserId is string &&
+        data.supplierId is string &&
+        data.fileName is string && data.fileName.size() < 255 &&
+        data.status in ['draft', 'needs_review', 'ready_for_review', 'finalized', 'abandoned', 'failed', 'processing', 'uploaded'];
+    }
+
+    function isValidMatchReview(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'rawName', 'rawPrice', 'rawCurrency', 'reviewStatus']) &&
+        data.ownerUserId is string &&
+        data.rawName is string && data.rawName.size() < 500 &&
+        data.rawPrice is number &&
+        data.rawCurrency is string && data.rawCurrency.size() == 3 &&
+        data.reviewStatus in ['pending', 'approved', 'rejected', 'changed', 'new_product_created', 'ignored', 'no_match', 'low_confidence', 'duplicate'];
+    }
+
+    function isValidPriceEntry(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'canonicalProductId', 'supplierId', 'price', 'currency', 'date']) &&
+        data.ownerUserId is string &&
+        data.canonicalProductId is string &&
+        data.supplierId is string &&
+        data.price is number &&
+        data.currency is string && data.currency.size() == 3;
+    }
+
+    function isValidAuditLog(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'userId', 'action', 'timestamp']) &&
+        data.ownerUserId is string &&
+        data.userId is string &&
+        data.action is string && data.action.size() < 100;
+    }
+
+    function isValidQuotationItem(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'quotationId', 'rawName', 'price', 'currency', 'status']) &&
+        data.ownerUserId is string &&
+        data.quotationId is string &&
+        data.rawName is string && data.rawName.size() < 500 &&
+        data.price is number &&
+        data.currency is string && data.currency.size() == 3 &&
+        data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidUploadItemRaw(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'uploadId', 'rawName', 'rawPrice', 'rawCurrency']) &&
+        data.ownerUserId is string &&
+        data.uploadId is string &&
+        data.rawName is string && data.rawName.size() < 500 &&
+        data.rawPrice is number &&
+        data.rawCurrency is string && data.rawCurrency.size() == 3;
+    }
+
+    function isValidRejectedMatch(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'normalizedRawName', 'candidateProductId', 'reason']) &&
+        data.ownerUserId is string &&
+        data.normalizedRawName is string && data.normalizedRawName.size() < 500 &&
+        data.candidateProductId is string &&
+        data.reason is string && data.reason.size() < 1000;
+    }
+
+    function isValidExchangeRate(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'fromCurrency', 'toCurrency', 'rate']) &&
+        data.ownerUserId is string &&
+        data.fromCurrency is string && data.fromCurrency.size() == 3 &&
+        data.toCurrency is string && data.toCurrency.size() == 3 &&
+        data.rate is number && data.rate > 0;
+    }
+
+    function isValidMatchLearning(data) {
+      return hasRequiredFields(data, ['ownerUserId', 'productId', 'rawName', 'normalizedRawName', 'action']) &&
+        data.ownerUserId is string &&
+        data.productId is string &&
+        data.rawName is string && data.rawName.size() < 500 &&
+        data.normalizedRawName is string && data.normalizedRawName.size() < 500 &&
+        data.action in ['approved', 'rejected'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Admin override
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      (request.resource.data.role == 'individual_user' || isAdmin()); // Prevent self-role escalation on create
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role; // Prevent self-role escalation on update
+    }
+
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidCompany(request.resource.data);
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.ownerId == request.auth.uid && isValidCompany(request.resource.data));
+    }
+
+    match /company_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidSupplier(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidSupplier(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /canonical_products/{productId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidCanonicalProduct(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidCanonicalProduct(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /product_aliases/{aliasId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && 
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /supplier_uploads/{uploadId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidSupplierUpload(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidSupplierUpload(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /match_reviews/{reviewId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidMatchReview(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidMatchReview(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /price_entries/{entryId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidPriceEntry(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidPriceEntry(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.ownerUserId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.ownerUserId == request.auth.uid && isValidAuditLog(request.resource.data);
+    }
+
+    match /quotation_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidQuotationItem(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidQuotationItem(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /upload_items_raw/{itemId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidUploadItemRaw(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidUploadItemRaw(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /rejected_matches/{matchId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidRejectedMatch(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidRejectedMatch(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /exchange_rates/{rateId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidExchangeRate(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidExchangeRate(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    match /match_learning/{signalId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isAdmin()) && isValidMatchLearning(request.resource.data);
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin()) && isValidMatchLearning(request.resource.data) &&
+                      (request.resource.data.ownerUserId == resource.data.ownerUserId || isAdmin());
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    // Legacy Collections
+    match /products/{productId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow write: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+    }
+
+    match /quotations/{quotationId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+      allow write: if isAuthenticated() && (resource == null || resource.data.ownerUserId == request.auth.uid || isAdmin());
+    }
+
+    match /system/stats {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
